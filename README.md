@@ -7,9 +7,10 @@ Usage
 -----
 
 - Define users as command arguments, STDIN or mounted in /etc/sftp-users.conf
-  (syntax: `user:pass[:e][:uid[:gid]]...`).
+  (syntax: `user:pass[:e][:uid[:gid[,gid...]]]...`).
   - You must set custom UID for your users if you want them to make changes to
     your mounted volumes with permissions matching your host filesystem.
+  - First GID specified is the default initial group of the user.
 - Mount volumes in user's home folder.
   - The users are chrooted to their home directory, so you must mount the
     volumes in separate directories inside the user's home directory

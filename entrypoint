@@ -23,10 +23,10 @@ function createUser() {
     if [ "${param[2]}" == "e" ]; then
         chpasswdOptions="-e"
         uid="${param[3]}"
-        gid="${param[4]}"
+        gids="${param[4]}"
     else
         uid="${param[2]}"
-        gid="${param[3]}"
+        gids="${param[3]}"
     fi
 
     if [ -z "$user" ]; then
@@ -45,18 +45,27 @@ function createUser() {
         useraddOptions="$useraddOptions --non-unique --uid $uid"
     fi
 
-    if [ -n "$gid" ]; then
-        if ! $(cat /etc/group | cut -d: -f3 | grep -q "$gid"); then
-            groupadd --gid $gid $gid
-        fi
-
-        useraddOptions="$useraddOptions --gid $gid"
+    if [ -n "$gids" ]; then
+        IFS=',' read -a gids <<< $gids
+        for gid in "${gids[@]}"; do
+            if ! cut -d: -f3 /etc/group | grep -q "^$gid$"; then
+                groupadd --gid $gid $gid
+            fi
+        done
+        ## first gid will be default group
+        useraddOptions="$useraddOptions --gid ${gids[0]}" 
+        gids=(${gids[@]:1})
     fi
 
     useradd $useraddOptions $user
     mkdir -p /home/$user
     chown root:root /home/$user
     chmod 755 /home/$user
+
+    for gid in "${gids[@]}"; do
+        [ "$gid" ] || continue
+        usermod -a -G $gid $user
+    done
 
     if [ -z "$pass" ]; then
         pass="$(echo `</dev/urandom tr -dc A-Za-z0-9 | head -c256`)"
